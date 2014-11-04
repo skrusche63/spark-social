@@ -26,16 +26,16 @@ import org.java_websocket.WebSocket
 import de.kp.spark.social.Configuration
 import de.kp.spark.social.socket.WebSocketService
 
-object HashtagActor {
+object TagActor {
 
-  sealed trait HashtagMessage
-  case class Unregister(ws:WebSocket) extends HashtagMessage
+  sealed trait TagMessage
+  case class Unregister(ws:WebSocket) extends TagMessage
 
 }
 
-class HashtagActor extends Actor with ActorLogging {
+class TagActor extends Actor with ActorLogging {
 
-  import HashtagActor._
+  import TagActor._
   import WebSocketService._
   
   implicit val ec = context.dispatcher

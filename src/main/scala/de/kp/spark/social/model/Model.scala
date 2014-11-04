@@ -25,6 +25,13 @@ import org.json4s.native.Serialization.{read,write}
 
 import twitter4j.{GeoLocation,Place}
 
+case class ServiceRequest(
+  service:String,task:String,data:Map[String,String]
+)
+case class ServiceResponse(
+  service:String,task:String,data:Map[String,String],status:String
+)
+
 case class TagCount(tag:String,count:Long)
 
 case class Tweet(
@@ -41,10 +48,32 @@ case class Tweet(
   text:String
 )
 
+object Messages {
+
+  def REQUEST_IS_UNKNOWN():String = String.format("""Unknown request.""")
+
+  def STREAMING_STARTED(uid:String):String = String.format("""Streaming started for uid '%s'""",uid)
+
+  def STREAMING_STOPPED(uid:String):String = String.format("""Streaming stopped for uid '%s'""",uid)
+
+  def TASK_IS_UNKNOWN(uid:String,task:String):String = String.format("""The task '%s' is unknown for uid '%s'.""", task, uid)
+ 
+}
+
+object ResponseStatus {
+
+  val FAILURE:String = "failure"
+  val SUCCESS:String = "success"
+    
+}
+
 object Serializer {
     
   implicit val formats = Serialization.formats(NoTypeHints)
 
   def serializeTagCount(tagcount:TagCount):String = write(tagcount)
+
+  def serializeResponse(response:ServiceResponse):String = write(response)  
+  def deserializeRequest(request:String):ServiceRequest = read[ServiceRequest](request)
 
 }

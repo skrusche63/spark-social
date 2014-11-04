@@ -122,16 +122,28 @@
 	  <version>3.2.10</version>
     </dependency>
     
-    <!--  spray 1.2.0 -->
+    <!-- spray 1.2.0 -->
+    <dependency>
+      <groupId>io.spray</groupId>
+      <artifactId>spray-can</artifactId>
+      <version>1.2.0</version>
+    </dependency>  
+    
+    <dependency>
+      <groupId>io.spray</groupId>
+      <artifactId>spray-routing</artifactId>
+      <version>1.2.0</version>
+    </dependency>  
+    
     <dependency>
       <groupId>io.spray</groupId>
       <artifactId>spray-client</artifactId>
       <version>1.2.0</version>
     </dependency>  
-
+    
     <dependency>
       <groupId>io.spray</groupId>
-      <artifactId>spray-httpx</artifactId>
+      <artifactId>spray-caching</artifactId>
       <version>1.2.0</version>
     </dependency>  
 
@@ -147,12 +159,6 @@
 	  <artifactId>akka-contrib_2.10</artifactId>
 	  <version>2.2.3</version>
     </dependency> 
- 
-    <dependency>
-	  <groupId>com.typesafe.akka</groupId>
-	  <artifactId>akka-remote_2.10</artifactId>
-	  <version>2.2.3</version>
-    </dependency>
 
     <dependency>
       <groupId>com.twitter</groupId>

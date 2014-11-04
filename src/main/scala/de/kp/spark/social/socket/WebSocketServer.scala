@@ -21,7 +21,7 @@ package de.kp.spark.social.socket
 import akka.actor.{ActorSystem,Props}
 
 import de.kp.spark.social.Configuration
-import de.kp.spark.social.actor.{HashtagActor}
+import de.kp.spark.social.actor.{TagActor}
 
 object WebSocketServer {
 
@@ -36,10 +36,24 @@ object WebSocketServer {
      * Generate actors and services for different web socket descriptors;
      * note, that the different descriptors refer to specific Kafka topics
      */
-    val hashtagActor = system.actorOf(Props[HashtagActor], "HashtagActor")
+    
+    /*********************************************************************
+     *                        hashtag_count/ws
+     ********************************************************************/
+    
+    val hashtagActor = system.actorOf(Props[TagActor], "HashtagActor")
     val hashtagService = new KafkaService("hashtag_count",hashtagActor)
     
     service.forResource("/hashtag_count/ws", Some(hashtagService))
+    
+    /*********************************************************************
+     *                        cashtag_count/ws
+     ********************************************************************/
+
+    val cashtagActor = system.actorOf(Props[TagActor], "CashtagActor")
+    val cashtagService = new KafkaService("cashtag_count",cashtagActor)
+    
+    service.forResource("/cashtag_count/ws", Some(cashtagService))
    
     service.start()
     sys.addShutdownHook({system.shutdown;service.stop})

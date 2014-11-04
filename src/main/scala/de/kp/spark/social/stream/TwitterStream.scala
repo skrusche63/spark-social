@@ -41,26 +41,17 @@ import org.apache.commons.pool2.impl.{GenericObjectPool, GenericObjectPoolConfig
 import de.kp.spark.social.model._
 import de.kp.spark.social.TwitterParser
 
-class TwitterStream(settings:Map[String,String]) extends Serializable{
+class TwitterStream(@transient val ssc:StreamingContext) extends Serializable{
 
     Logger.getLogger("org").setLevel(Level.ERROR)
     Logger.getLogger("akka").setLevel(Level.ERROR)
     
     
-  def run() {
-
-    /**
-     * Batch duration is the time duration spark streaming uses to 
-     * collect spark RDDs; with a duration of 5 seconds, for example
-     * spark streaming collects RDDs every 5 seconds, which then may
-     * be further processed    
-     */
-    val master = settings.get("spark.master").get
-    val ssc = new StreamingContext(master, "TwitterStream", Seconds(10))
+  def run(settings:Map[String,String] = Map.empty[String,String]) {
 
     try {
    
-      val oauth = Some(setupOAuth())
+      val oauth = Some(setupOAuth(settings))
       val stream:DStream[Status] = TwitterUtils.createStream(ssc, oauth, Seq(), StorageLevel.MEMORY_AND_DISK)
 
       val producerPool = ssc.sparkContext.broadcast(createKafkaContextPool(settings))
@@ -120,6 +111,31 @@ class TwitterStream(settings:Map[String,String]) extends Serializable{
         })
       
       })
+      /*
+       * STEP #3: Focus on cashtags and determine count for every tag
+       * and send tag count to Apache Kafka for further processing and
+       * publishing
+       */
+      val cashtags = tweets.flatMap(tweet => tweet.cashtags).countByValue()
+     cashtags.foreachRDD(rdd => {
+      
+        val settings = Map.empty[String,String]     
+        rdd.foreachPartition(partition => {
+        
+          val producer = producerPool.value.borrowObject()
+          partition.foreach(entry => {
+          
+            val ser = Serializer.serializeTagCount(new TagCount(entry._1,entry._2))
+            val bytes = ser.getBytes()
+          
+            producer.send(bytes,"cashtag_count")
+          
+          })
+          producerPool.value.returnObject(producer)
+        
+        })
+      
+      })
       
     } catch {
       case e:Exception => println(e.getMessage)
@@ -159,20 +175,20 @@ class TwitterStream(settings:Map[String,String]) extends Serializable{
    * Build twitter configuration object (mostly from
    * user credentials)
    */
-  private def buildConfiguration():Configuration = {
+  private def buildConfiguration(settings:Map[String,String]):Configuration = {
 
     val builder = new ConfigurationBuilder()
 
-    val consumer_key = settings.get("twitter.consumer.key").get
+    val consumer_key = settings("twitter.consumer.key")
     builder.setOAuthConsumerKey(consumer_key)
     
-    val consumer_secret = settings.get("twitter.consumer.secret").get
+    val consumer_secret = settings("twitter.consumer.secret")
     builder.setOAuthConsumerSecret(consumer_secret)
     
-    val access_token = settings.get("twitter.access.token").get
+    val access_token = settings("twitter.access.token")
     builder.setOAuthAccessToken(access_token)
     
-    val access_tokenSecret = settings.get("twitter.access.token.secret").get    
+    val access_tokenSecret = settings("twitter.access.token.secret")    
     builder.setOAuthAccessTokenSecret(access_tokenSecret)
     
     /**
@@ -186,9 +202,9 @@ class TwitterStream(settings:Map[String,String]) extends Serializable{
   /**
    * Create an OAuth based authorization handle
    */
-  private def setupOAuth():OAuthAuthorization = {
+  private def setupOAuth(settings:Map[String,String]):OAuthAuthorization = {
    
-    val conf = buildConfiguration()
+    val conf = buildConfiguration(settings)
     new OAuthAuthorization(conf)
     
   }

@@ -27,14 +27,15 @@ object Configuration {
   private val path = "application.conf"
   private val config = ConfigFactory.load(path)
 
-  def actor():(Int,Int) = {
+  def actor():(Int,Int,Int) = {
   
     val cfg = config.getConfig("actor")
-    
-    val heartbeat = cfg.getInt("heartbeat")
+
+    val duration = cfg.getInt("duration")
+    val retries = cfg.getInt("retries")  
     val timeout = cfg.getInt("timeout")
     
-    (heartbeat,timeout)
+    (duration,retries,timeout)
     
   }
   
