@@ -26,8 +26,10 @@ import akka.util.Timeout
 
 import akka.actor.{OneForOneStrategy, SupervisorStrategy}
 
-import de.kp.spark.social.Configuration
+import de.kp.spark.social.{Configuration,Credentials}
 import de.kp.spark.social.model._
+
+import de.kp.spark.social.stream.TwitterStream
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.Future
@@ -39,6 +41,12 @@ class SocialMaster(@transient val ssc:StreamingContext) extends BaseActor {
   override val supervisorStrategy = OneForOneStrategy(maxNrOfRetries=retries,withinTimeRange = DurationInt(time).minutes) {
     case _ : Exception => SupervisorStrategy.Restart
   }
+  /* 
+   * Reference to the streaming source: actually this is twitter,
+   * but the datasift connector may also be used here.
+   */
+  private val twitterStream = new TwitterStream(ssc)
+  private var started = false
   
   def receive = {
     
@@ -54,16 +62,33 @@ class SocialMaster(@transient val ssc:StreamingContext) extends BaseActor {
 
 	    case "start" => {
 	      
-	      // TODO
-	      val uid = deser.data("uid")
-	      val data = Map("uid" -> uid, "message" -> Messages.STREAMING_STARTED(uid))
+	      if (started == false) {
 	      
-	      new ServiceResponse(deser.service,deser.task,data,ResponseStatus.SUCCESS)
+	        val credentials = Credentials.twitter
+	        twitterStream.run(credentials)
+	        
+	        started = true
+	        
+	        val uid = deser.data("uid")
+	        val data = Map("uid" -> uid, "message" -> Messages.STREAMING_STARTED(uid))
+	      
+	        new ServiceResponse(deser.service,deser.task,data,ResponseStatus.SUCCESS)
+	        
+	      } else {
+
+	        val uid = deser.data("uid")
+	        val data = Map("uid" -> uid, "message" -> Messages.STREAMING_IS_RUNNING(uid))
+	      
+	        new ServiceResponse(deser.service,deser.task,data,ResponseStatus.SUCCESS)
+	        
+	      }
 	      
 	    }
         case "stop"  => {
 	      
-	      // TODO
+	      twitterStream.shutdown()
+	      started = false
+	      
 	      val uid = deser.data("uid")
 	      val data = Map("uid" -> uid,"messages" -> Messages.STREAMING_STOPPED(uid))
 	      

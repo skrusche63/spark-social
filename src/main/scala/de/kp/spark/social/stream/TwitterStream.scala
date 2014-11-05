@@ -41,7 +41,7 @@ import org.apache.commons.pool2.impl.{GenericObjectPool, GenericObjectPoolConfig
 import de.kp.spark.social.model._
 import de.kp.spark.social.TwitterParser
 
-class TwitterStream(@transient val ssc:StreamingContext) extends Serializable{
+class TwitterStream(@transient val ssc:StreamingContext) extends Serializable {
 
     Logger.getLogger("org").setLevel(Level.ERROR)
     Logger.getLogger("akka").setLevel(Level.ERROR)
@@ -117,7 +117,7 @@ class TwitterStream(@transient val ssc:StreamingContext) extends Serializable{
        * publishing
        */
       val cashtags = tweets.flatMap(tweet => tweet.cashtags).countByValue()
-     cashtags.foreachRDD(rdd => {
+      cashtags.foreachRDD(rdd => {
       
         val settings = Map.empty[String,String]     
         rdd.foreachPartition(partition => {
@@ -146,6 +146,15 @@ class TwitterStream(@transient val ssc:StreamingContext) extends Serializable{
 
   }
 
+  def shutdown() {
+    
+    /* Stop streaming but not spark context and process 
+     * all data received so far (option = gracefully)
+     */
+    ssc.stop(false,true)
+  
+  }
+    
   /**
    * The results of stream processing are sent to Apache Kafka for 
    * later processing or visualization through websocket access

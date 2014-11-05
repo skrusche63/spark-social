@@ -51,6 +51,8 @@ case class Tweet(
 object Messages {
 
   def REQUEST_IS_UNKNOWN():String = String.format("""Unknown request.""")
+  
+  def STREAMING_IS_RUNNING(uid:String):String = String.format("""Streaming is running for uid '%s'""",uid)
 
   def STREAMING_STARTED(uid:String):String = String.format("""Streaming started for uid '%s'""",uid)
 
