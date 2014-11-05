@@ -8,3 +8,16 @@
 
 The Social Analysis Engine is one of the nine members of the open ensemble and is built to determine and leverage actual trends
 from social media in real-time.
+
+Streaming data from Twitter or in combination with the [DataSift Connector](https://github.com/skrusche63/spark-datasift) is processed, aggregated and
+published through appropriate Web Socket channels.
+
+### Technology
+
+* Akka
+* Kafka
+* Spark
+* Spark Streaming
+* Spray
+* Web Socket
+
