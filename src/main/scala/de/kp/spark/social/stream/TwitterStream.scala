@@ -41,6 +41,8 @@ import org.apache.commons.pool2.impl.{GenericObjectPool, GenericObjectPoolConfig
 import de.kp.spark.social.model._
 import de.kp.spark.social.TwitterParser
 
+import scala.collection.mutable.Map
+
 class TwitterStream(@transient val ssc:StreamingContext) extends Serializable {
 
     Logger.getLogger("org").setLevel(Level.ERROR)
@@ -51,8 +53,16 @@ class TwitterStream(@transient val ssc:StreamingContext) extends Serializable {
 
     try {
    
+      /*
+       * Determine whether a filter has been set
+       */
+      val filter = if (settings.contains("filter")) {
+        settings("filter").split(",").toSeq
+        
+      } else Seq()
+      
       val oauth = Some(setupOAuth(settings))
-      val stream:DStream[Status] = TwitterUtils.createStream(ssc, oauth, Seq(), StorageLevel.MEMORY_AND_DISK)
+      val stream:DStream[Status] = TwitterUtils.createStream(ssc, oauth, filter, StorageLevel.MEMORY_AND_DISK)
 
       val producerPool = ssc.sparkContext.broadcast(createKafkaContextPool(settings))
 
@@ -77,12 +87,24 @@ class TwitterStream(@transient val ssc:StreamingContext) extends Serializable {
        val (hashtags,cashtags,urls,users) = TwitterParser.parse(text)
 
        /* User */
-       val user = status.getUser().getId()
+       val user = status.getUser()
 
        /* Place */
        val place = status.getPlace()
       
-       Tweet(uid,user,lat,lon,place,hashtags,cashtags,urls,users,text)
+       /* Statistics */
+       val retweet = status.isRetweet()
+       val favorited = status.isFavorited()
+       /*
+        * The number of times this tweet has been retweeted, or -1 
+        * when the tweet was created before this feature was enabled
+        */
+       val retweetCount = status.getRetweetCount()
+       
+       val retweetedStatus = status.getRetweetedStatus()
+       val original = if (retweetedStatus != null) Some(retweetedStatus) else None
+       
+       Tweet(uid,user,lat,lon,place,hashtags,cashtags,urls,users,retweet,favorited,retweetCount,original,text)
        
       })
       
@@ -136,6 +158,16 @@ class TwitterStream(@transient val ssc:StreamingContext) extends Serializable {
         })
       
       })
+      /*
+       * STEP #4: Focus on tweets in the last 30 seconds and repeat this 
+       * action every 15 seconds and determine those tweets with the top
+       * most retweet count
+       */
+      val window = Seconds(30)
+      val interval = Seconds(15)
+    
+      val retweets = tweets.window(window,interval)
+      // TODO
       
     } catch {
       case e:Exception => println(e.getMessage)

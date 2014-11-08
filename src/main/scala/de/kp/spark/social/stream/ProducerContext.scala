@@ -26,6 +26,8 @@ import java.util.{Properties,UUID}
 import org.apache.commons.pool2.impl.DefaultPooledObject
 import org.apache.commons.pool2.{PooledObject,BasePooledObjectFactory}
 
+import scala.collection.mutable.Map
+
 class ProducerContext(settings:Map[String,String]) {
 
   /*

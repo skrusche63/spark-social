@@ -23,7 +23,7 @@ import org.json4s._
 import org.json4s.native.Serialization
 import org.json4s.native.Serialization.{read,write}
 
-import twitter4j.{GeoLocation,Place}
+import twitter4j.{GeoLocation,Place,User,Status}
 
 case class ServiceRequest(
   service:String,task:String,data:Map[String,String]
@@ -36,7 +36,7 @@ case class TagCount(tag:String,count:Long)
 
 case class Tweet(
   uid:Long,
-  user:Long,
+  user:User,
   lat:Double,
   lon:Double,
   place:Place,
@@ -44,6 +44,10 @@ case class Tweet(
   cashtags:List[String],
   urls:List[String],
   users:List[String],  
+  retweet:Boolean,
+  favorited:Boolean,
+  retweetCount:Long,
+  original:Option[Status],
   /* The textual descritpion of the body */
   text:String
 )

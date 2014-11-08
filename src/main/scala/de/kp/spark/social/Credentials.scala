@@ -19,7 +19,7 @@ package de.kp.spark.social
 */
 
 import com.typesafe.config.ConfigFactory
-import scala.collection.mutable.HashMap
+import scala.collection.mutable.Map
 
 object Credentials {
 

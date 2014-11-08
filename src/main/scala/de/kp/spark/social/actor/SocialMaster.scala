@@ -64,8 +64,12 @@ class SocialMaster(@transient val ssc:StreamingContext) extends BaseActor {
 	      
 	      if (started == false) {
 	      
-	        val credentials = Credentials.twitter
-	        twitterStream.run(credentials)
+	        val settings = Credentials.twitter
+	        if (deser.data.contains("filter")) {
+	          settings += "filter" -> deser.data("filter")
+	        }
+	        
+	        twitterStream.run(settings)
 	        
 	        started = true
 	        
